@@ -23,8 +23,8 @@ jobs:
         run: pip install garua
 
       - name: Buscar código de la estación Mallares
-        run: python -m garua.cli --search Mallares
+        run: garua --search Mallares
 
       - name: Probar descarga (ajustar código luego de ver el paso anterior)
-        run: python -m garua.cli --codigo 000000 --modo month --periodo 2026-08
+        run: garua --station 000000 --mode month --year 2026 --month 8
         continue-on-error: true
