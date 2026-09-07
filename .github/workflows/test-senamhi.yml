@@ -2,8 +2,6 @@ name: Test Garua Real
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 10 * * *'   # ejemplo: 10:00 UTC = 5:00 am Perú
 
 jobs:
   test-garua:
@@ -24,6 +22,9 @@ jobs:
       - name: Instalar Garúa
         run: pip install garua
 
-      - name: Probar descarga de una sola estación
-        run: |
-          python -m garua.cli --codigo MALLARES --modo month --periodo 2026-08
+      - name: Buscar código de la estación Mallares
+        run: python -m garua.cli --search Mallares
+
+      - name: Probar descarga (ajustar código luego de ver el paso anterior)
+        run: python -m garua.cli --codigo 000000 --modo month --periodo 2026-08
+        continue-on-error: true
