@@ -1,0 +1,36 @@
+nano .github/workflows/test-senamhi.ymlname: Test SENAMHI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-senamhi:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Probar conexión a SENAMHI
+        run: |
+          python - <<'PY'
+          import requests
+
+          url = "https://www.senamhi.gob.pe/"
+
+          print(f"Probando: {url}")
+
+          try:
+              response = requests.get(
+                  url,
+                  timeout=30,
+                  headers={
+                      "User-Agent": "Mozilla/5.0"
+                  }
+              )
+
+              print(f"HTTP status: {response.status_code}")
+              print(f"Bytes recibidos: {len(response.content)}")
+
+          except Exception as e:
+              print(f"ERROR: {type(e).__name__}")
+              print(f"Detalle: {e}")
+              raise
+          PY
