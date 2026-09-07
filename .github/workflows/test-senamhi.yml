@@ -4,33 +4,89 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-senamhi:
+  diagnostico-senamhi:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Probar conexión a SENAMHI
+      - name: 1. Información del runner
         run: |
-          python - <<'PY'
-          import requests
+          echo "=== RUNNER ==="
+          uname -a
+          echo
+          echo "=== IP PUBLICA DEL RUNNER ==="
+          curl -4 --max-time 10 https://api.ipify.org || true
+          echo
 
-          url = "https://www.senamhi.gob.pe/"
+      - name: 2. Diagnóstico DNS
+        run: |
+          echo "=== DNS www.senamhi.gob.pe ==="
+          getent hosts www.senamhi.gob.pe || true
+          echo
 
-          print(f"Probando: {url}")
+          echo "=== DNS senamhi.gob.pe ==="
+          getent hosts senamhi.gob.pe || true
+          echo
 
-          try:
-              response = requests.get(
-                  url,
-                  timeout=30,
-                  headers={
-                      "User-Agent": "Mozilla/5.0"
-                  }
-              )
+      - name: 3. Prueba TCP puerto 443
+        run: |
+          echo "=== TCP www.senamhi.gob.pe:443 ==="
+          timeout 15 bash -c '</dev/tcp/www.senamhi.gob.pe/443' \
+            && echo "TCP 443 OK" \
+            || echo "TCP 443 FALLÓ"
 
-              print(f"HTTP status: {response.status_code}")
-              print(f"Bytes recibidos: {len(response.content)}")
+          echo
+          echo "=== TCP senamhi.gob.pe:443 ==="
+          timeout 15 bash -c '</dev/tcp/senamhi.gob.pe/443' \
+            && echo "TCP 443 OK" \
+            || echo "TCP 443 FALLÓ"
 
-          except Exception as e:
-              print(f"ERROR: {type(e).__name__}")
-              print(f"Detalle: {e}")
-              raise
-          PY
+      - name: 4. Prueba HTTPS con IPv4
+        run: |
+          echo "=== HTTPS IPv4 ==="
+          curl -4 -v \
+            --connect-timeout 15 \
+            --max-time 30 \
+            -A "Mozilla/5.0" \
+            https://www.senamhi.gob.pe/ \
+            -o /tmp/senamhi_ipv4.html \
+            || true
+
+          echo
+          echo "=== TAMAÑO RESPUESTA IPv4 ==="
+          if [ -f /tmp/senamhi_ipv4.html ]; then
+            wc -c /tmp/senamhi_ipv4.html
+          fi
+
+      - name: 5. Prueba HTTPS con IPv6
+        run: |
+          echo "=== HTTPS IPv6 ==="
+          curl -6 -v \
+            --connect-timeout 15 \
+            --max-time 30 \
+            -A "Mozilla/5.0" \
+            https://www.senamhi.gob.pe/ \
+            -o /tmp/senamhi_ipv6.html \
+            || true
+
+          echo
+          echo "=== TAMAÑO RESPUESTA IPv6 ==="
+          if [ -f /tmp/senamhi_ipv6.html ]; then
+            wc -c /tmp/senamhi_ipv6.html
+          fi
+
+      - name: 6. Prueba contra dominio sin www
+        run: |
+          echo "=== HTTPS senamhi.gob.pe ==="
+          curl -v \
+            --connect-timeout 15 \
+            --max-time 30 \
+            -A "Mozilla/5.0" \
+            https://senamhi.gob.pe/ \
+            -o /tmp/senamhi_root.html \
+            || true
+
+          echo
+          echo "=== TAMAÑO RESPUESTA ==="
+          if [ -f /tmp/senamhi_root.html ]; then
+            wc -c /tmp/senamhi_root.html
+          fi
