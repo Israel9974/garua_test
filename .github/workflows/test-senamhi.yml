@@ -1,4 +1,6 @@
-nano .github/workflows/test-senamhi.ymlname: Test SENAMHI
+nano .github/workflows/test-senamhi.ymlname:
+
+name: Test SENAMHI
 
 on:
   workflow_dispatch:
