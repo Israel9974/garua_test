@@ -1,92 +1,29 @@
-name: Test SENAMHI
+name: Test Garua Real
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 10 * * *'   # ejemplo: 10:00 UTC = 5:00 am Perú
 
 jobs:
-  diagnostico-senamhi:
+  test-garua:
     runs-on: ubuntu-latest
-
     steps:
-      - name: 1. Información del runner
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar Chromium
         run: |
-          echo "=== RUNNER ==="
-          uname -a
-          echo
-          echo "=== IP PUBLICA DEL RUNNER ==="
-          curl -4 --max-time 10 https://api.ipify.org || true
-          echo
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser
 
-      - name: 2. Diagnóstico DNS
+      - name: Instalar Garúa
+        run: pip install garua
+
+      - name: Probar descarga de una sola estación
         run: |
-          echo "=== DNS www.senamhi.gob.pe ==="
-          getent hosts www.senamhi.gob.pe || true
-          echo
-
-          echo "=== DNS senamhi.gob.pe ==="
-          getent hosts senamhi.gob.pe || true
-          echo
-
-      - name: 3. Prueba TCP puerto 443
-        run: |
-          echo "=== TCP www.senamhi.gob.pe:443 ==="
-          timeout 15 bash -c '</dev/tcp/www.senamhi.gob.pe/443' \
-            && echo "TCP 443 OK" \
-            || echo "TCP 443 FALLÓ"
-
-          echo
-          echo "=== TCP senamhi.gob.pe:443 ==="
-          timeout 15 bash -c '</dev/tcp/senamhi.gob.pe/443' \
-            && echo "TCP 443 OK" \
-            || echo "TCP 443 FALLÓ"
-
-      - name: 4. Prueba HTTPS con IPv4
-        run: |
-          echo "=== HTTPS IPv4 ==="
-          curl -4 -v \
-            --connect-timeout 15 \
-            --max-time 30 \
-            -A "Mozilla/5.0" \
-            https://www.senamhi.gob.pe/ \
-            -o /tmp/senamhi_ipv4.html \
-            || true
-
-          echo
-          echo "=== TAMAÑO RESPUESTA IPv4 ==="
-          if [ -f /tmp/senamhi_ipv4.html ]; then
-            wc -c /tmp/senamhi_ipv4.html
-          fi
-
-      - name: 5. Prueba HTTPS con IPv6
-        run: |
-          echo "=== HTTPS IPv6 ==="
-          curl -6 -v \
-            --connect-timeout 15 \
-            --max-time 30 \
-            -A "Mozilla/5.0" \
-            https://www.senamhi.gob.pe/ \
-            -o /tmp/senamhi_ipv6.html \
-            || true
-
-          echo
-          echo "=== TAMAÑO RESPUESTA IPv6 ==="
-          if [ -f /tmp/senamhi_ipv6.html ]; then
-            wc -c /tmp/senamhi_ipv6.html
-          fi
-
-      - name: 6. Prueba contra dominio sin www
-        run: |
-          echo "=== HTTPS senamhi.gob.pe ==="
-          curl -v \
-            --connect-timeout 15 \
-            --max-time 30 \
-            -A "Mozilla/5.0" \
-            https://senamhi.gob.pe/ \
-            -o /tmp/senamhi_root.html \
-            || true
-
-          echo
-          echo "=== TAMAÑO RESPUESTA ==="
-          if [ -f /tmp/senamhi_root.html ]; then
-            wc -c /tmp/senamhi_root.html
-          fi
+          python -m garua.cli --codigo <CODIGO_ESTACION> --modo month --periodo 2026-08
