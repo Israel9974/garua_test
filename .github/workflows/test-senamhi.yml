@@ -25,8 +25,8 @@ jobs:
       - name: Buscar código de la estación Mallares
         run: garua --search Mallares
 
-      - name: Probar descarga con Chrome real + display virtual
+      - name: Probar descarga con Chrome real + display virtual (modo debug)
         env:
           GARUA_BROWSER_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
-        run: xvfb-run --auto-servernum garua --station 104079 --mode month --year 2026 --month 8
+        run: xvfb-run --auto-servernum python debug_garua.py --station 104079 --mode month --year 2026 --month 8
         continue-on-error: true
