@@ -26,5 +26,7 @@ jobs:
         run: garua --search Mallares
 
       - name: Probar descarga (ajustar código luego de ver el paso anterior)
+        env:
+          GARUA_BROWSER_NO_SANDBOX: "true"
         run: garua --station 104079 --mode month --year 2026 --month 8
         continue-on-error: true
