@@ -1,21 +1,29 @@
-import logging
-logging.basicConfig(level=logging.INFO)
+import asyncio
+import os
+import zendriver as zd
 
-import sys
-from zendriver import Config
-from garua.exceptions import BrowserNotFoundError
-import garua.scraping.browser as browser_mod
-import garua.scraping.scraper as scraper_mod
+STATION_URL = (
+    "https://www.senamhi.gob.pe/mapas/mapa-estaciones-2/map_red_graf.php"
+    "?cod=104079&estado=REAL&tipo_esta=M&cate=CP&cod_old=000208"
+)
 
-def patched_get_browser_config():
-    check = browser_mod.check_browser()
-    if not check.ok or not check.path:
-        raise BrowserNotFoundError(check.message)
-    return Config(browser_executable_path=check.path, sandbox=False)
+async def main():
+    browser_path = os.environ["GARUA_BROWSER_PATH"]
+    config = zd.Config(browser_executable_path=browser_path, sandbox=False)
+    browser = await zd.start(config=config)
+    page = await browser.get(STATION_URL)
 
-# Reemplazamos la función en ambos lugares donde Garúa la usa
-browser_mod.get_browser_config = patched_get_browser_config
-scraper_mod.get_browser_config = patched_get_browser_config
+    await asyncio.sleep(10)  # dar tiempo a que cargue/resuelva Cloudflare
 
-from garua.main import cli
-sys.exit(cli())
+    title = await page.evaluate("document.title")
+    print("TITULO DE LA PAGINA:", title)
+
+    html = await page.get_content()
+    print("LARGO DEL HTML:", len(html))
+    print("---- PRIMEROS 2000 CARACTERES ----")
+    print(html[:2000])
+
+    await page.save_screenshot("/tmp/senamhi_screenshot.png")
+    await browser.stop()
+
+asyncio.run(main())
