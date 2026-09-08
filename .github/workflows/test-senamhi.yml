@@ -14,10 +14,10 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Instalar Chromium
+      - name: Instalar Chromium y Xvfb
         run: |
           sudo apt-get update
-          sudo apt-get install -y chromium-browser
+          sudo apt-get install -y chromium-browser xvfb
 
       - name: Instalar Garúa
         run: pip install garua
@@ -25,8 +25,6 @@ jobs:
       - name: Buscar código de la estación Mallares
         run: garua --search Mallares
 
-      - name: Probar descarga (ajustar código luego de ver el paso anterior)
-        env:
-          GARUA_BROWSER_NO_SANDBOX: "true"
-        run: garua --station 104079 --mode month --year 2026 --month 8
+      - name: Probar descarga con display virtual
+        run: xvfb-run --auto-servernum garua --station 104079 --mode month --year 2026 --month 8
         continue-on-error: true
